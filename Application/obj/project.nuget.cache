@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "dgSpecHash": "O3peCBtdreE=",
+  "success": true,
+  "projectFilePath": "/Users/mariochaves/RiderProjects/NotificationService/Application/Application.csproj",
+  "expectedPackageFiles": [
+    "/Users/mariochaves/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/9.0.0-preview.6.24327.7/microsoft.extensions.dependencyinjection.abstractions.9.0.0-preview.6.24327.7.nupkg.sha512",
+    "/Users/mariochaves/.nuget/packages/microsoft.extensions.options/9.0.0-preview.6.24327.7/microsoft.extensions.options.9.0.0-preview.6.24327.7.nupkg.sha512",
+    "/Users/mariochaves/.nuget/packages/microsoft.extensions.primitives/9.0.0-preview.6.24327.7/microsoft.extensions.primitives.9.0.0-preview.6.24327.7.nupkg.sha512",
+    "/Users/mariochaves/.nuget/packages/polly/8.4.1/polly.8.4.1.nupkg.sha512",
+    "/Users/mariochaves/.nuget/packages/polly.core/8.4.1/polly.core.8.4.1.nupkg.sha512"
+  ],
+  "logs": []
+}
