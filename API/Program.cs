@@ -11,6 +11,9 @@ var config = builder.Configuration;
 builder.Services.Configure<RateLimitOptions>(config.GetSection("RateLimitOptions"));
 builder.Services.AddSingleton<Gateway>();
 builder.Services.AddSingleton<INotificationService, NotificationServiceImpl>();
+builder.Services.AddSingleton<BackgroundQueue<Notification>>();
+builder.Services.AddSingleton<INotificationService, NotificationServiceImpl>();
+builder.Services.AddHostedService<NotificationProcessingService>();
 
 var app = builder.Build();
 
