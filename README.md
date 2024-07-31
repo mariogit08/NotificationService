@@ -60,7 +60,7 @@ dotnet build
 
 **Example of Request:**
 
-```curl -X POST "http://localhost:5000/api/notification" -H "Content-Type: application/json" -d '{"type": "News", "userId": "user1", "message": "news update"}'```
+```curl -X POST "http://localhost:5000/api/notification" -H "Content-Type: application/json" -d '{"type": "news", "userId": "user1", "message": "news update"}'```
 
 **Testing**
 
