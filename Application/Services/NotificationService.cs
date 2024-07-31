@@ -1,44 +1,50 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Options;
-
-namespace Application;
-
 using Polly;
 using Polly.RateLimit;
-using System;
-using System.Collections.Concurrent;
-using System.Threading.Tasks;
 
-public class NotificationServiceImpl : INotificationService, IDisposable
+namespace Application.Services;
+
+public class NotificationServiceImpl : INotificationService
 {
     private readonly Gateway _gateway;
-    private readonly Dictionary<string, AsyncRateLimitPolicy> _rateLimitPolicies;
-    private readonly BlockingCollection<Notification> _queue;
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, AsyncRateLimitPolicy>> _rateLimitPolicies;
+    private readonly BackgroundQueue<Notification> _backgroundQueue;
+    private readonly RateLimitOptions _rateLimitOptions;
 
-    public NotificationServiceImpl(Gateway gateway, IOptions<RateLimitOptions> options)
+    public NotificationServiceImpl(Gateway gateway, IOptions<RateLimitOptions> options, BackgroundQueue<Notification> backgroundQueue)
     {
         _gateway = gateway;
-        _rateLimitPolicies = new Dictionary<string, AsyncRateLimitPolicy>();
+        _backgroundQueue = backgroundQueue;
+        _rateLimitOptions = options.Value;
+        _rateLimitPolicies = new ConcurrentDictionary<string, ConcurrentDictionary<string, AsyncRateLimitPolicy>>();
 
-        foreach (var policy in options.Value.Policies)
+        foreach (var policy in _rateLimitOptions.Policies)
         {
-            _rateLimitPolicies[policy.Key] = Policy.RateLimitAsync(policy.Value.Limit, policy.Value.Period);
+            _rateLimitPolicies[policy.Key] = new ConcurrentDictionary<string, AsyncRateLimitPolicy>();
         }
-
-        _queue = new BlockingCollection<Notification>();
     }
 
-    public async void SendAsync(string type, string userId, string message)
+    public async Task SendAsync(string type, string userId, string message)
     {
         if (!_rateLimitPolicies.ContainsKey(type))
         {
             throw new ArgumentException($"Unknown notification type: {type}");
         }
 
-        var policy = _rateLimitPolicies[type];
+        var userPolicies = _rateLimitPolicies[type];
+
+        if (!userPolicies.ContainsKey(userId))
+        {
+            var rateLimitPolicy = _rateLimitOptions.Policies[type];
+            userPolicies[userId] = Policy.RateLimitAsync(rateLimitPolicy.Limit, rateLimitPolicy.Period);
+        }
+
+        var rateLimit = userPolicies[userId];
 
         try
         {
-            await policy.ExecuteAsync(async () =>
+            await rateLimit.ExecuteAsync(async () =>
             {
                 _gateway.Send(userId, message);
                 await Task.CompletedTask;
@@ -47,38 +53,7 @@ public class NotificationServiceImpl : INotificationService, IDisposable
         catch (RateLimitRejectedException)
         {
             Console.WriteLine($"Rate limit exceeded for {type} notifications to {userId}. Queuing message.");
-            _queue.Add(new Notification { Type = type, UserId = userId, Message = message });
+            _backgroundQueue.Queue(new Notification { Type = type, UserId = userId, Message = message });
         }
-    }
-
-    public async Task ProcessQueue()
-    {
-        foreach (var notification in _queue.GetConsumingEnumerable())
-        {
-            try
-            {
-                var policy = _rateLimitPolicies[notification.Type];
-
-                await policy.ExecuteAsync(async () =>
-                {
-                    _gateway.Send(notification.UserId, notification.Message);
-                    await Task.CompletedTask;
-                });
-            }
-            catch (RateLimitRejectedException)
-            {
-                Console.WriteLine(
-                    $"Rate limit still exceeded for {notification.Type} notifications to {notification.UserId}. Re-queuing message.");
-                _queue.Add(notification);
-            }
-        }
-
-        await Task.Delay(TimeSpan.FromMinutes(1));
-    }
-
-    public void Dispose()
-    {
-        _queue.CompleteAdding();
-        _queue.Dispose();
     }
 }

@@ -19,10 +19,15 @@ public class BackgroundQueue<T>
     
     public IEnumerable<T> GetEnumerable()
     {
-        return _queue.GetConsumingEnumerable();
+        return _queue.Count == 0 ? [] : _queue.GetConsumingEnumerable();
+    }
+    
+    public int GetCount()
+    {
+        return _queue.Count;
     }
 
-    public T Dequeue(CancellationToken cancellationToken)
+    public T Dequeue()
     {
         return _queue.Take();
     }

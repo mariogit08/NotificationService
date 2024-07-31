@@ -17,9 +17,20 @@ public class NotificationController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> SendNotification(string type, string userId, string message)
+    public async Task<IActionResult> SendNotification([FromBody] NotificationInputModel notificationInputModel)
     {
-        await _notificationService.SendAsync(type, userId, message);
+        await _notificationService.SendAsync
+            (notificationInputModel.Type, 
+             notificationInputModel.UserId, 
+             notificationInputModel.Message);
+        
         return Ok("Notification sent or queued.");
+    }
+
+    public struct NotificationInputModel
+    {
+        public string Type { get; set; }
+        public string UserId { get; set; }
+        public string Message { get; set; }
     }
 }
