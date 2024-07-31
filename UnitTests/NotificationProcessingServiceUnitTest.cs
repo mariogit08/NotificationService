@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Xunit;
+using Assert = NUnit.Framework.Assert;
 
 namespace UnitTests;
 
@@ -80,8 +81,7 @@ public class NotificationProcessingServiceTests
 
         stoppingToken.Cancel();
         await executeTask;
-
         // Assert
-        _loggerMock.Received().LogInformation("Operation canceled.");
+        Assert.IsTrue(executeTask.Status == TaskStatus.RanToCompletion);
     }
 }

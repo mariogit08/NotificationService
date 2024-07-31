@@ -7,21 +7,21 @@ namespace Application.Services;
 
 public class NotificationServiceImpl : INotificationService
 {
-    private readonly Gateway _gateway;
-    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, AsyncRateLimitPolicy>> _rateLimitPolicies;
+    private readonly IGateway _gateway;
+    private readonly Dictionary<string, Dictionary<string, AsyncRateLimitPolicy>> _rateLimitPolicies;
     private readonly BackgroundQueue<Notification> _backgroundQueue;
     private readonly RateLimitOptions _rateLimitOptions;
 
-    public NotificationServiceImpl(Gateway gateway, IOptions<RateLimitOptions> options, BackgroundQueue<Notification> backgroundQueue)
+    public NotificationServiceImpl(IGateway gateway, IOptions<RateLimitOptions> options, BackgroundQueue<Notification> backgroundQueue)
     {
         _gateway = gateway;
         _backgroundQueue = backgroundQueue;
         _rateLimitOptions = options.Value;
-        _rateLimitPolicies = new ConcurrentDictionary<string, ConcurrentDictionary<string, AsyncRateLimitPolicy>>();
+        _rateLimitPolicies = new Dictionary<string, Dictionary<string, AsyncRateLimitPolicy>>();
 
         foreach (var policy in _rateLimitOptions.Policies)
         {
-            _rateLimitPolicies[policy.Key] = new ConcurrentDictionary<string, AsyncRateLimitPolicy>();
+            _rateLimitPolicies[policy.Key] = new Dictionary<string, AsyncRateLimitPolicy>();
         }
     }
 
@@ -37,7 +37,7 @@ public class NotificationServiceImpl : INotificationService
         if (!userPolicies.ContainsKey(userId))
         {
             var rateLimitPolicy = _rateLimitOptions.Policies[type];
-            userPolicies[userId] = Policy.RateLimitAsync(rateLimitPolicy.Limit, rateLimitPolicy.Period);
+            userPolicies[userId] = Policy.RateLimitAsync(rateLimitPolicy.Limit, rateLimitPolicy.Period, rateLimitPolicy.Limit);
         }
 
         var rateLimit = userPolicies[userId];
