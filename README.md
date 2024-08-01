@@ -22,7 +22,7 @@ This project implements a notification service with rate limiting using .NET 8. 
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/mariogit08/notificationservice.git
+   git clone https://github.com/mariogit08/NotificationService.git
    cd notificationservice
 2. **Restore an build:**
 ```
